@@ -485,7 +485,6 @@ describe Undercover::Result do
       subject(:result) { result_for('never_called_one_liner') }
 
       it 'is uncovered although its line ran when the file loaded' do
-        expect(result.method_called?).to be(false)
         expect(result.uncovered?(4)).to be(true)
         expect(result.coverage_f).to eq(0.0)
       end
@@ -500,7 +499,6 @@ describe Undercover::Result do
       subject(:result) { result_for('called_one_liner') }
 
       it 'is covered' do
-        expect(result.method_called?).to be(true)
         expect(result.uncovered?(2)).to be(false)
         expect(result.coverage_f).to eq(1.0)
       end
@@ -536,19 +534,13 @@ describe Undercover::Result do
     context 'for a method ignored by SimpleCov' do
       subject(:result) { result_for('ignored_one_liner') }
 
-      it 'has no method coverage, and its skipped line stays covered' do
-        expect(result.method_coverage?).to be(false)
+      it 'keeps its skipped line covered' do
         expect(result.uncovered?(17)).to be(false)
       end
     end
 
-    it 'has no method coverage for other nodes' do
-      expect(result_for('MethodCoverage').method_coverage?).to be(false)
-    end
-
-    it 'refuses to tell whether a node without method coverage was called' do
-      expect { result_for('MethodCoverage').method_called? }
-        .to raise_error(described_class::NoMethodCoverageError, "no method coverage for #{file_path}:1:18")
+    it 'does not report calls for other nodes' do
+      expect(result_for('MethodCoverage').pretty_print).not_to include('calls:')
     end
 
     it 'counts a def defined in several classes as called when any of them was' do
@@ -568,14 +560,15 @@ describe Undercover::Result do
       adapter = Undercover::SimplecovResultAdapter.new(report)
       nodes = all_nodes('concern.rb', "included do\n  def foo = 1\n\n  def bar = 2\nend\n")
 
-      expect(described_class.new(nodes.find(&with_name('foo')), adapter, 'concern.rb').method_called?).to be(true)
-      expect(described_class.new(nodes.find(&with_name('bar')), adapter, 'concern.rb').method_called?).to be(false)
+      expect(described_class.new(nodes.find(&with_name('foo')), adapter, 'concern.rb').uncovered?(2)).to be(false)
+      expect(described_class.new(nodes.find(&with_name('bar')), adapter, 'concern.rb').uncovered?(4)).to be(true)
     end
 
     it 'keeps line coverage alone for an LCOV report' do
       result = described_class.new(all_nodes('spec/fixtures/class.rb').find(&with_name('foo')), lcov, 'class.rb')
 
-      expect(result.method_coverage?).to be(false)
+      expect(result.uncovered?(9)).to be(true)
+      expect(result.pretty_print).not_to include('calls:')
     end
   end
 end

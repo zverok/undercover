@@ -4,8 +4,6 @@ require 'forwardable'
 
 module Undercover
   class Result # rubocop:disable Metrics/ClassLength
-    class NoMethodCoverageError < StandardError; end
-
     extend Forwardable
 
     attr_reader :node, :coverage, :coverage_adapter, :file_path
@@ -35,51 +33,25 @@ module Undercover
     def uncovered?(line_no)
       return false if skipped?(file_path, line_no)
 
-      if method_coverage?
-        # method wasn't called = no need to check other coverage events
-        return true unless method_called?
-        # method is called, but has no line coverage events = it is not uncovered
-        # might happen with methods with bodies only consisting of literals
-        return false if coverage.empty?
-      elsif coverage.empty?
-        # otherwise, no line coverage events = no coverage
-        return true
-      end
+      # method wasn't called = no need to check other coverage events
+      return true if method_never_called?
+      # no line coverage events = uncovered, unless the method is known to be called
+      # (which might happen with methods with bodies only consisting of literals)
+      return !method_coverage? if coverage.empty?
 
       return true if uncovered_branch_lines.include?(line_no)
 
       line_hits[line_no]&.zero?
     end
 
-    # Whether the report has SimpleCov's method coverage:
-    # - this node is a method;
-    # - its `def` was evaluated (and not skipped with some metaprogramming);
-    # - SimpleCov method coverage is enabled (enable_coverage :method).
-    def method_coverage?
-      method_call_counts.any?
-    end
-
-    # Whether this method was ever called.
-    # Line coverage can't tell: Ruby runs a def line when the file loads, which makes
-    # a one-line method look covered even if nothing calls it.
-    def method_called?
-      raise NoMethodCoverageError, "no method coverage for #{file_path_with_lines}" unless method_coverage?
-
-      method_call_counts.sum.positive?
-    end
-
     # Method `coverage_f` returns the total coverage of this Undercover::Result
     # as a % value, taking into account missing branches. Line coverage will be counted
     # as 0 if any branch is untested.
-    # rubocop:disable-next Metrics/AbcSize, Metrics/PerceivedComplexity, Metrics/MethodLength
+    # rubocop:disable-next Metrics/AbcSize, Metrics/MethodLength
     def coverage_f
       # Same logic as in #uncovered?
-      if method_coverage?
-        return 0.0 unless method_called?
-        return 1.0 if coverage.empty?
-      elsif coverage.empty?
-        return 0.0
-      end
+      return 0.0 if method_never_called?
+      return method_coverage? ? 1.0 : 0.0 if coverage.empty?
 
       lines = {}
       coverage.each do |ln, block_or_line_cov, _, branch_cov|
@@ -185,8 +157,18 @@ module Undercover
     METHOD_KINDS = %i[instance_method class_method].freeze
     private_constant :METHOD_KINDS
 
+    # Whether the report has SimpleCov's method coverage:
+    # - this node is a method;
+    # - its `def` was evaluated (and not skipped with some metaprogramming);
+    # - SimpleCov method coverage is enabled (enable_coverage :method).
+    def method_coverage?
+      method_call_counts.any?
+    end
+
+    # Line coverage can't tell whether a method was ever called: Ruby runs a def line when
+    # the file loads, which makes a one-line method look covered even if nothing calls it.
     def method_never_called?
-      method_coverage? && !method_called?
+      method_coverage? && method_call_counts.sum.zero?
     end
 
     # Call counts of the method defined by this node's `def`:

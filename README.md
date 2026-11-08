@@ -277,7 +277,6 @@ Output structure:
 
 Each warning includes:
 - `uncovered_lines` — line numbers with zero execution count
-- `method_called` — for methods, whether the method was ever called; present only with method coverage (`enable_coverage(:method)`)
 - `uncovered_branches` — branch entries that were never taken, each with `line`, `block`, and `branch` identifiers. The optional `description` field names the branch from the source (e.g. `"if user.admin?"`, `"else"`, `"when :active"`). For same-line branches such as ternaries, the arm type is appended after ` → ` (e.g. `"? role == :admin → else"`).
 
 Branch-level entries require `enable_coverage(:branch)` in your SimpleCov configuration (see [Setting up coverage reporting](#setting-up-coverage-reporting)).

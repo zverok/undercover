@@ -6,7 +6,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 ### Added
-- Use SimpleCov's method coverage when it is enabled (`enable_coverage(:method)`): flag changed methods that were never called, which line coverage reports as covered for one-line methods and misses for changed signatures, and stop flagging called methods whose body has no line events. The `--format json` output gains `method_called` for methods
+- Use SimpleCov's method coverage when it is enabled (`enable_coverage(:method)`): flag changed methods that were never called, which line coverage reports as covered for one-line methods and misses for changed signatures, and stop flagging called methods whose body has no line events
 
 ## [0.9.0] - 2026-10-26
 ### Added
