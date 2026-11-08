@@ -91,7 +91,7 @@ RSpec.describe 'SimpleCov::Formatter::Undercover' do
       adapter = Undercover::SimplecovResultAdapter.new(JSON.parse(JSON.generate(formatted_result)))
 
       expect(adapter.method_coverage('spec/fixtures/method_coverage.rb')).to eq(
-        [2, 2] => [3], [6, 11] => [0], [17, 17] => ['ignored']
+        [2, 2, 'called_one_liner'] => [3], [6, 11, 'never_called'] => [0], [17, 17, 'ignored_one_liner'] => ['ignored']
       )
     end
 

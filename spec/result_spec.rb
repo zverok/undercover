@@ -549,10 +549,10 @@ describe Undercover::Result do
           'concern.rb' => {
             'lines' => [1, 1, nil, 1, nil],
             'methods' => [
-              {'start_line' => 2, 'end_line' => 2, 'coverage' => 0},
-              {'start_line' => 2, 'end_line' => 2, 'coverage' => 4},
-              {'start_line' => 4, 'end_line' => 4, 'coverage' => 0},
-              {'start_line' => 4, 'end_line' => 4, 'coverage' => 0},
+              {'name' => 'Foo#foo', 'start_line' => 2, 'end_line' => 2, 'coverage' => 0},
+              {'name' => 'Bar#foo', 'start_line' => 2, 'end_line' => 2, 'coverage' => 4},
+              {'name' => 'Foo#bar', 'start_line' => 4, 'end_line' => 4, 'coverage' => 0},
+              {'name' => 'Bar#bar', 'start_line' => 4, 'end_line' => 4, 'coverage' => 0},
             ]
           }
         }
@@ -562,6 +562,25 @@ describe Undercover::Result do
 
       expect(described_class.new(nodes.find(&with_name('foo')), adapter, 'concern.rb').uncovered?(2)).to be(false)
       expect(described_class.new(nodes.find(&with_name('bar')), adapter, 'concern.rb').uncovered?(4)).to be(true)
+    end
+
+    it 'tells apart methods defined on one line' do
+      report = {
+        'coverage' => {
+          'one_line.rb' => {
+            'lines' => [1, 1, nil],
+            'methods' => [
+              {'name' => 'Foo#unused', 'start_line' => 2, 'end_line' => 2, 'coverage' => 0},
+              {'name' => 'Foo#used', 'start_line' => 2, 'end_line' => 2, 'coverage' => 1},
+            ]
+          }
+        }
+      }
+      adapter = Undercover::SimplecovResultAdapter.new(report)
+      nodes = all_nodes('one_line.rb', "class Foo\n  def unused = 1; def used = 2\nend\n")
+
+      expect(described_class.new(nodes.find(&with_name('unused')), adapter, 'one_line.rb').uncovered?(2)).to be(true)
+      expect(described_class.new(nodes.find(&with_name('used')), adapter, 'one_line.rb').uncovered?(2)).to be(false)
     end
 
     it 'keeps line coverage alone for an LCOV report' do

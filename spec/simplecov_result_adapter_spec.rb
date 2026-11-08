@@ -312,11 +312,15 @@ describe Undercover::SimplecovResultAdapter do
   end
 
   describe '#method_coverage' do
-    it 'returns call counts keyed by the line range of each method' do
+    it 'returns call counts keyed by the line range and name of each method' do
       adapter = simplecov_coverage_fixture('spec/fixtures/method_coverage.json')
 
       expect(adapter.method_coverage('spec/fixtures/method_coverage.rb')).to eq(
-        [2, 2] => [3], [4, 4] => [0], [6, 11] => [0], [13, 15] => [2], [17, 17] => ['ignored']
+        [2, 2, 'called_one_liner'] => [3],
+        [4, 4, 'never_called_one_liner'] => [0],
+        [6, 11, 'never_called'] => [0],
+        [13, 15, 'called_with_literal_body'] => [2],
+        [17, 17, 'ignored_one_liner'] => ['ignored']
       )
     end
 
@@ -333,7 +337,26 @@ describe Undercover::SimplecovResultAdapter do
         }
       }
 
-      expect(described_class.new(result).method_coverage('concern.rb')).to eq([2, 2] => [0, 4])
+      expect(described_class.new(result).method_coverage('concern.rb')).to eq([2, 2, 'bar'] => [0, 4])
+    end
+
+    it 'keeps apart methods defined on one line, singleton ones included' do
+      result = {
+        'coverage' => {
+          'one_line.rb' => {
+            'lines' => [1, 1],
+            'methods' => [
+              {'name' => 'Foo#unused', 'start_line' => 2, 'end_line' => 2, 'coverage' => 0},
+              {'name' => 'Foo#used', 'start_line' => 2, 'end_line' => 2, 'coverage' => 1},
+              {'name' => '#<Class:Foo>#build', 'start_line' => 2, 'end_line' => 2, 'coverage' => 2},
+            ]
+          }
+        }
+      }
+
+      expect(described_class.new(result).method_coverage('one_line.rb')).to eq(
+        [2, 2, 'unused'] => [0], [2, 2, 'used'] => [1], [2, 2, 'build'] => [2]
+      )
     end
 
     it 'returns nil without method coverage in the report' do

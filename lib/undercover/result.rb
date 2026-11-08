@@ -178,7 +178,7 @@ module Undercover
     def method_call_counts
       @method_call_counts ||=
         if METHOD_KINDS.include?(node.kind)
-          (coverage_adapter.method_coverage(file_path)&.dig([first_line, last_line]) || []).grep(Integer)
+          (coverage_adapter.method_coverage(file_path)&.dig([first_line, last_line, name]) || []).grep(Integer)
         else
           []
         end
