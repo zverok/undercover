@@ -130,7 +130,9 @@ module Undercover
             Rainbow(' skipped').italic.darkgray.dark
         elsif num == first_line && method_never_called?
           Rainbow(formatted_line).red +
-            Rainbow(' method never called').italic.darkgray.dark
+            Rainbow(" hits: #{covered || 'n/a'}").italic.darkgray.dark +
+            count_covered_branches(num) +
+            Rainbow(' calls: 0').italic.darkgray.dark
         elsif covered.nil?
           Rainbow(formatted_line).darkgray.dark +
             Rainbow(' hits: n/a').italic.darkgray.dark +

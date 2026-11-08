@@ -492,7 +492,7 @@ describe Undercover::Result do
 
       it 'says so in #pretty_print' do
         expect(result.pretty_print.gsub(/\e\[[0-9;]*m/, ''))
-          .to eq('4:   def never_called_one_liner = :never method never called')
+          .to eq('4:   def never_called_one_liner = :never hits: 1 calls: 0')
       end
     end
 
@@ -515,6 +515,11 @@ describe Undercover::Result do
         expect(result.uncovered?(9)).to be(true)
         expect(result.uncovered?(10)).to be(true)
         expect(result.coverage_f).to eq(0.0)
+      end
+
+      it 'says so on its first line in #pretty_print' do
+        expect(result.pretty_print.gsub(/\e\[[0-9;]*m/, '').lines.first.chomp)
+          .to end_with('hits: n/a calls: 0')
       end
     end
 
